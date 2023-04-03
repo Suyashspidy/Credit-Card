@@ -1,0 +1,500 @@
+---
+title: "Self Project"
+author: "Suyash saxena"
+output:
+  
+  pdf_document: default
+  html_document: default
+---
+
+
+
+**Introduction**
+
+In today's fast-paced world, credit cards have become an essential part of our lives. They offer convenience and flexibility when it comes to making purchases, booking travel, or even paying bills. Credit cards allow users to make purchases without having to carry cash, and also provide a means of building credit history.
+
+However, with the convenience of credit cards comes the responsibility of managing credit effectively. Credit card companies need to carefully evaluate each application to determine the risk associated with lending money. This is where the Credit Card Approval Prediction dataset comes into play.
+
+The Credit Card Approval Prediction dataset provides a comprehensive set of attributes that can be used to evaluate the creditworthiness of applicants. It contains information on factors such as age, income, education, and employment status, which are known to influence credit card approval rates. By analyzing this dataset, we can gain insights into the factors that are most important in determining credit card approval rates.
+
+In this project, we will use data visualization techniques to explore the Credit Card Approval Prediction dataset and identify the key factors that influence credit card approval rates. We will use tools such as scatter plots, heat maps, and histograms to visualize the data and analyze the patterns that emerge. We will also develop a credit card approval predictive model using XGBoost and Decision Tree algorithms. This model aims to assist companies in making more informed credit-worthy decisions, helping to mitigate the risk of defaults on future credit card payments. By analyzing various factors mentioned in the dataset, our model can accurately predict whether an applicant is likely to be approved for a credit card or not. With this information, companies can make more informed decisions about who to extend credit to, reducing the risk of defaults and ultimately reducing losses. Overall, our predictive models will serve as valuable tools for businesses looking to gain deeper insights into their customers and make data-driven decisions.
+
+
+**Goals & Objectives** 
+
+1. To identify the most important factors that influence credit card approval rates by analyzing the Credit Card Approval Prediction dataset.
+
+2. To understand how different attributes such as age, income, education, and employment status affect credit card approval rates.
+
+3. To use data visualization techniques to identify patterns and trends in the data that can provide valuable insights to credit card companies.
+
+4. To help credit card companies make more informed decisions about who to approve for credit cards based on the analysis of the Credit Card Approval Prediction dataset.
+
+5. To demonstrate the effectiveness of data visualization techniques in exploring and analyzing complex datasets such as the Credit Card Approval Prediction dataset.
+
+6. To compare different predictive modeling techniques and understand the results.
+
+**What is our Dataset?**
+
+Our dataset consists of two CSV files, application_record.csv and credit_record.csv, which provide valuable information about clients' demographic and financial details, as well as their credit history. The data has been collected to help understand clients' financial behaviors, assess credit risk, and potentially make more informed decisions on extending credit or offering financial products.
+
+The application_record.csv file contains demographic and financial information about each client, such as their gender, car ownership, property ownership, income, education level, and occupation, among other details. It also includes information about customers' family status and communication preferences, like mobile phone and email availability. The DAYS_BIRTH and DAYS_EMPLOYED features represent the client's age and employment history in days, counting backwards from the current day.
+
+The credit_record.csv file, on the other hand, focuses on clients' credit histories. It shows the status of their loans for each month in the past, with statuses ranging from 0 (1-29 days past due) to 5 (overdue or bad debts, write-offs for more than 150 days). Additionally, the 'C' status indicates the loan was paid off in that month, while 'X' means there was no loan for that month. This file helps to understand clients' credit repayment behavior and assess their creditworthiness.
+
+**Exploratory Analysis**
+
+```{r}
+library(readr)
+library(ggplot2)
+library(tidyverse)
+library(lubridate)
+library(dplyr)
+library(caret)
+library(randomForest)
+library(corrplot)
+library(rpart)
+library(rpart.plot)
+mydata <- read.csv("C:/Users/EndUser/Downloads/application_record.csv")
+mydata2 <- read.csv("C:/Users/EndUser/Downloads/credit_record.csv")
+
+head(mydata)
+head(mydata2)
+
+# Removing rows with missing data
+mydata <- na.omit(mydata)
+mydata2<- na.omit(mydata2)
+
+dim(mydata)
+dim(mydata2)
+```
+
+
+```{r}
+ggplot(data = mydata2, aes(x = STATUS)) + 
+  geom_bar() + 
+  labs(title = "Distribution of Credit Status", x = "Status", y = "Count")
+```
+**Fig 1**
+
+Figure 1 shows the distribution of the credit status variable using a bar plot. This plot indicates that most of the credit status values fall under the categories "0", "C", "X" while very few values fall under the categories "2", "3", "4" and 5. This suggests that most of the credit card applications were either approved or in good standing. And from the graph concluded that the C category has the highest count (these are the people who paid off the loan that month).
+
+```{r}
+ggplot(data = mydata, aes(x = NAME_INCOME_TYPE, fill = NAME_INCOME_TYPE)) +
+geom_bar() +
+labs(title = "Amount of income per type", x = "Income type", y = "Count") +
+theme(plot.title = element_text(size = 30), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+scale_fill_brewer(palette = "Set1")
+```
+**Fig 2**
+
+Figure 2 represents the distribution of income types among the applicants in the dataset.The x-axis represents the different income types, while the y-axis shows the count of applicants for each income type. The chart reveals that the majority of applicants have income from "Working" and "Commercial associate" categories. On the other hand, "Student" and "pensioner" categories have the lowest number of applicants.
+
+
+```{r}
+ggplot(data = mydata, aes(x = AMT_INCOME_TOTAL)) +
+  geom_histogram(binwidth = 10000) +
+  scale_x_continuous(labels = scales::comma, limits = c(0, 500000)) +
+  labs(title = "Distribution of Income", x = "Income", y = "Count")
+```
+**Fig 3**
+
+Figure 3 illustrates the distribution of income levels using a histogram. This plot indicates that most of the applicants have an income below 100,000 and the income distribution is skewed to the right. We can see from the graph that most people have income between 100,000 to 200,000.
+
+```{r}
+ggplot(data = mydata, aes(x = AMT_INCOME_TOTAL, y = CNT_CHILDREN, color = factor(NAME_HOUSING_TYPE))) +
+  geom_point(alpha = 0.6) +
+  scale_x_continuous(labels = scales::comma, limits = c(0, 500000)) +
+  labs(title = "Relationship between Income and Number of Children",
+       x = "Income level of applicants",
+       y = "Number of Children",
+       color = "Housing Type") +
+  theme(legend.position = "bottom")
+```
+**Fig 4**
+
+Figure 4 shows the relationship between income and the number of children an applicant has, colored by their housing type. This plot indicates that applicants with higher income tend to have fewer children and that those who own a house tend to have higher income levels compared to other housing types. From the graph we are able to see that there is not much of a difference in the number of children to income level..
+
+
+```{r}
+my_palette <- c("#F8766D", "#7CAE00", "#00BFC4", "#C77CFF", "#619CFF", "#F564E3")
+
+# Plotting with colors and legend
+ggplot(data = mydata, aes(x = NAME_FAMILY_STATUS, fill = NAME_FAMILY_STATUS)) + 
+  geom_bar() +
+  scale_fill_manual(values = my_palette) +
+  labs(fill = "Family Status")
+```
+**Fig 5**
+
+Figure 5 indicates that most of the applicants are married or in a civil union, followed by single applicants. The most number of applicants are married followed by single and then civil marriage.
+
+```{r}
+ggplot(data = mydata, aes(x = NAME_HOUSING_TYPE, fill = NAME_HOUSING_TYPE)) + 
+  geom_bar() +
+  scale_fill_manual(values = my_palette) +
+  labs(fill = "Housing Type")
+```
+**Fig 6**
+
+Figure 6 illustrates the distribution of family status and housing type, respectively, using a color palette and legend. These plots provide a visual representation of the frequency of different family statuses and housing types among the applicants.
+
+
+```{r}
+# Merging the two data frames based on the ID variable
+merged <- mydata %>%
+  inner_join(mydata2, by = "ID")
+
+merged
+
+# Calculating proportion of good vs. bad clients
+proportions <- table(merged$STATUS) / nrow(merged) * 100
+
+# Plotting proportions
+ggplot(data = data.frame(proportions), aes(x = names(proportions), y = proportions)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  labs(title = "Proportion of Good vs. Bad Clients", x = "Status", y = "Proportion (%)")
+```
+**Fig 8**
+
+For figure 8, we merged the two datasets (mydata and mydata2) based on the ID variable. This allowed us to combine information about each client's application data (e.g., income, family status) with their credit history (e.g., whether they made payments on time or not).
+
+The plot shows the proportion of each status category (good or bad) as a percentage of the total number of clients. The x-axis displays the two categories of the STATUS variable (good and bad), and the y-axis displays the proportion (%) of clients in each category.(Basically this graph tells us the counts of different weight classes:
+0: 1-29 days past due ,1: 30-59 days past due ,2: 60-89 days overdue  3: 90-119 days overdue 
+4: 120-149 days overdue , 5: Overdue or bad debts, write-offs for more than 150 days 
+C: paid off that month ,X: No loan for the month) 
+Based on the above we can see that class 5(bad are around 1% who hasn’t paid and the Class3-4 are around 0.5 to 1%)
+
+
+```{r}
+class(mydata$DAYS_EMPLOYED)
+mydata$DAYS_EMPLOYED <- as.numeric(mydata$DAYS_EMPLOYED)
+mydata$DAYS_EMPLOYED[mydata$DAYS_EMPLOYED > 10000] <- NA
+summary(mydata$DAYS_EMPLOYED)
+```
+
+```{r}
+ggplot(data = merged, aes(x = MONTHS_BALANCE , y = NAME_INCOME_TYPE)) +
+  geom_boxplot(fill = "dodgerblue", alpha = 0.2) +
+  labs(title = "Month credit balance vs Income type", x = "MONTHS BALANCE", y = " Income type")
+```
+**Fig 9**
+
+Figure 9 shows a boxplot to visualize the relationship between the months of credit balance and the income types of the clients.The plot suggests that the income types have different distributions of credit balance months, with some income types having a longer credit balance than others.
+
+```{r}
+# Creating a new data frame with the four variables of interest
+data <- mydata %>% 
+  select(CNT_CHILDREN, AMT_INCOME_TOTAL, DAYS_BIRTH, DAYS_EMPLOYED)
+
+library(gridExtra)
+
+# Plotting a box plot for each variable
+p1 <- ggplot(data = data %>% 
+         mutate(DAYS_EMPLOYED = ifelse(DAYS_EMPLOYED > 10000, 10000, DAYS_EMPLOYED)), 
+       aes(x = "", y = CNT_CHILDREN, fill = "CNT_CHILDREN")) +
+  geom_boxplot() +
+  labs(title = "Boxplot for CNT_CHILDREN",
+       x = "",
+       y = "CNT_CHILDREN") +
+  theme(legend.position = "none")
+
+p2 <- ggplot(data = data %>% 
+         mutate(DAYS_EMPLOYED = ifelse(DAYS_EMPLOYED > 10000, 10000, DAYS_EMPLOYED)), 
+       aes(x = "", y = AMT_INCOME_TOTAL, fill = "AMT_INCOME_TOTAL")) +
+  geom_boxplot() +
+  labs(title = "Boxplot for AMT_INCOME_TOTAL",
+       x = "",
+       y = "AMT_INCOME_TOTAL") +
+  theme(legend.position = "none")
+
+p3 <- ggplot(data = data %>% 
+         mutate(DAYS_EMPLOYED = ifelse(DAYS_EMPLOYED > 10000, 10000, DAYS_EMPLOYED)), 
+       aes(x = "", y = DAYS_BIRTH, fill = "DAYS_BIRTH")) +
+  geom_boxplot() +
+  labs(title = "Boxplot for DAYS_BIRTH",
+       x = "",
+       y = "DAYS_BIRTH") +
+  theme(legend.position = "none")
+
+p4 <- ggplot(data = data %>% 
+         mutate(DAYS_EMPLOYED = ifelse(DAYS_EMPLOYED < 10000, DAYS_EMPLOYED)), 
+       aes(x = "", y = DAYS_EMPLOYED, fill = "DAYS_EMPLOYED")) +
+  geom_boxplot() +
+  labs(title = "Boxplot for DAYS_EMPLOYED",
+       x = "",
+       y = "DAYS_EMPLOYED") +
+  theme(legend.position = "none")
+grid.arrange(p1, p2, p3, p4, nrow = 2, ncol = 2)
+```
+**Fig 10**
+
+In Figure 10, we focused on four key variables in the "mydata" dataset: "CNT_CHILDREN", "AMT_INCOME_TOTAL", "DAYS_BIRTH", and "DAYS_EMPLOYED". These variables were chosen due to their potential relevance in predicting credit risk.To gain a better understanding of these variables, we created boxplots to visualize their distributions.
+
+First, we created a boxplot for "CNT_CHILDREN" (the number of children the client has) which showed that most clients had no children, while a small proportion had up to 3 children. The plot also showed some extreme outliers, indicating that some clients had a very large number of children.
+
+Next, we created a boxplot for "AMT_INCOME_TOTAL" (the client's income) which revealed a wide range of income levels, with most clients earning less than 300,000 currency units per year. However, there were several extreme outliers with very high incomes.
+
+We then created a boxplot for "DAYS_BIRTH" (the client's age in days) which showed that most clients were between 30 and 60 years old, with a median age of around 44 years.
+
+Finally, we created a boxplot for "DAYS_EMPLOYED" (the number of days the client has been employed) which showed a wide range of employment lengths, with most clients having been employed for less than 5000 days (approximately 13 years). However, there were also some extreme outliers (deleted the outliers in this case as some days don’t even make sense(part of data cleaning).
+
+**Methodology**
+
+We will begin by cleaning the dataset to ensure that it is free from any inconsistencies, missing values, or errors that may negatively affect the analysis. Data cleaning is a crucial step, as it helps to maintain the integrity and reliability of the dataset, which ultimately leads to more accurate results.
+
+Once the dataset is cleaned, we will proceed to plot a correlation matrix. This matrix will provide a visual representation of the relationships between different features in the dataset. By examining the correlations, we can identify any strong associations between the numerical variables, which may help us understand the underlying patterns and interactions within the data.
+
+We will proceed to develop two models: XGBoost and Decision Tree. XGBoost is an advanced implementation of gradient boosting that is particularly effective for large datasets and complex problems. It is known for its accuracy, speed, and ability to handle missing values. On the other hand, the Decision Tree model is a simpler, more interpretable algorithm that builds a tree-like structure to make decisions based on feature values. By comparing the performance of these two models, we can gain insights into which algorithm is better suited for the task at hand and make informed decisions about the best approach to predicting credit risk.
+
+**1. Data Cleaning & Pre-processing**
+
+The below codes demonstrate the process of cleaning and pre-processing the data. 
+
+```{r}
+merged_dataset <- merge(mydata, mydata2, by = "ID")
+dim(merged_dataset)
+head(merged_dataset)
+merged_data1 <- na_if(merged_dataset, "")
+print(sum(is.na(merged_data1)))
+```
+
+In this part, the merge() function is used to combine two datasets, mydata and mydata2, based on the common column "ID". The dim() function is then used to display the dimensions (number of rows and columns) of the merged dataset. Here, the na_if() function is used to replace any empty strings in the merged_dataset with NAs (missing values). There are around 368020 missing values in the dataset.
+
+
+```{r}
+merged_data <- drop_na(merged_data1)
+dim(merged_data)
+```
+
+We then drop the missing values as shown in the above code.
+
+```{r}
+# Converting categorical variables to factors
+merged_data$CODE_GENDER <- as.factor(merged_data$CODE_GENDER)
+merged_data$FLAG_OWN_CAR <- as.factor(merged_data$FLAG_OWN_CAR)
+merged_data$FLAG_OWN_REALTY <- as.factor(merged_data$FLAG_OWN_REALTY)
+merged_data$NAME_INCOME_TYPE <- as.factor(merged_data$NAME_INCOME_TYPE)
+merged_data$NAME_EDUCATION_TYPE <- as.factor(merged_data$NAME_EDUCATION_TYPE)
+merged_data$NAME_FAMILY_STATUS <- as.factor(merged_data$NAME_FAMILY_STATUS)
+merged_data$NAME_FAMILY_STATUS <- as.factor(merged_data$NAME_FAMILY_STATUS)
+merged_data$NAME_HOUSING_TYPE <- as.factor(merged_data$NAME_HOUSING_TYPE)
+merged_data$OCCUPATION_TYPE <- as.factor(merged_data$OCCUPATION_TYPE)
+merged_data$STATUS <- as.factor(merged_data$STATUS)
+```
+
+This section of the code converts several categorical variables into factors. Factors are used in R to represent categorical data and allow for more efficient storage and computation.
+
+```{r}
+# Use the 'preProcess' function from the 'caret' package
+preprocess_params <- preProcess(merged_data[, c("CNT_CHILDREN", "AMT_INCOME_TOTAL", "DAYS_BIRTH", "DAYS_EMPLOYED")], method = c("center", "scale"))
+new_merged_data <- predict(preprocess_params, merged_data)
+head(new_merged_data)
+dim(new_merged_data)
+```
+
+In this last part, the preProcess() function is used to center and scale four numerical variables: "CNT_CHILDREN", "AMT_INCOME_TOTAL", "DAYS_BIRTH", and "DAYS_EMPLOYED". Centering means subtracting the mean of a variable from each of its values, while scaling means dividing each value by the standard deviation of the variable. These operations help in standardizing the variables, which is important for machine learning algorithms.
+
+The preProcess() function computes the necessary parameters for centering and scaling and stores them in the preprocess_params object. The predict() function is then used to apply these transformations to the original dataset merged_data, and the result is saved in the new_merged_data variable.
+
+**2. Correlation of numerical variables**
+
+```{r}
+numerical_columns <- c("CNT_CHILDREN", "AMT_INCOME_TOTAL", "DAYS_BIRTH", "DAYS_EMPLOYED", "CNT_FAM_MEMBERS", "MONTHS_BALANCE")
+
+# Computing and plotting the correlation matrix
+cor_matrix <- cor(new_merged_data[, numerical_columns])
+print(cor_matrix)
+corrplot(cor_matrix, method = "color", type = "upper", tl.col = "black")
+```
+
+In this section of the analysis, we computed and plotted the correlation matrix of the numerical variables in the merged data set. The variables included in the correlation analysis are CNT_CHILDREN, AMT_INCOME_TOTAL, DAYS_BIRTH, DAYS_EMPLOYED, CNT_FAM_MEMBERS, and MONTHS_BALANCE.
+
+The output of the code shows the correlation matrix. Each cell in the matrix represents the correlation coefficient between two variables. The color of the cell indicates the strength and direction of the correlation, with red indicating a positive correlation, blue indicating a negative correlation, and white indicating no correlation.
+
+In our case, we observe that there are no strong correlations among the numerical variables. The strongest positive correlation is observed between CNT_CHILDREN and CNT_FAM_MEMBERS, which is not surprising as both variables are related to family size. There is a negative correlation between DAYS_BIRTH and DAYS_EMPLOYED, which could be due to retirement.
+
+**3. XGBoost Model**
+
+```{r}
+dim(new_merged_data)
+n_merged_data <- na_if(new_merged_data, "")
+print(sum(is.na(n_merged_data)))
+final_data <- drop_na(new_merged_data)
+dim(final_data)
+head(final_data)
+```
+We will drop the ID column so that model can function properly.
+
+```{r}
+model_data <- select(final_data, -ID)
+head(model_data)
+```
+
+Now, we will perform some data manipulation, particularly focusing on the target variable 'STATUS'. The target variable has several categories, and we aim to simplify it for better modeling and analysis. Having too many categories in the target variable can lead to several challenges, such as increased complexity in the model, difficulty in interpretation, and increased chances of overfitting.
+
+First, we remove all records with the 'X' category from the dataset. This category represents the absence of a loan for the month, and since we are interested in credit payment behavior, we exclude these records from our analysis.
+
+Next, we combine categories '5' and 'C' to form a new category, '5C'. Category '5' represents overdue or bad debts, while category 'C' represents loans that were paid off during the month. By combining these categories, we can focus on the distinction between different levels of overdue payments.
+
+After combining the categories, we create a mapping of the STATUS categories to numeric values, starting from 0. This step is essential because to work with numeric values, encoding the categorical target variable into numeric form is necessary.
+
+Finally, we encode the target variable using the mapping and check the unique values of the encoded target variable. This step helps ensure that the encoding has been done correctly and that we are working with a simplified and numerically encoded target variable.
+
+```{r}
+# Removing the 'X' category from the dataset
+model.data <- subset(model_data, STATUS != "X")
+
+# Combine categories '5' and 'C' 
+model.data$STATUS <- as.character(model.data$STATUS)
+model.data$STATUS[model.data$STATUS == "5" | model.data$STATUS == "C"] <- "5C"
+model.data$STATUS <- as.factor(model.data$STATUS)
+
+# Create a mapping of STATUS categories to numeric values starting from 0
+status_mapping <- setNames(0:(length(unique(model.data$STATUS)) - 1), unique(model.data$STATUS))
+
+# Encode the target variable using the mapping
+model.data$STATUS_NUM <- as.numeric(status_mapping[as.character(model.data$STATUS)])
+
+# Check the unique values of the encoded target variable
+print(unique(model.data$STATUS_NUM))
+```
+We are preparing the dataset for modeling by splitting it into training and testing sets.
+
+First, we split the dataset into training and testing sets, with 75% of the data going to the training set and the remaining 25% going to the testing set. This step is crucial because it allows us to train a model on one set of data and evaluate its performance on a separate, ensuring a fair assessment of the model's performance.
+
+Finally, we extract the target variable from both the training and testing datasets. The target variable, in this case, is the numerically encoded 'STATUS_NUM' variable. By extracting it separately, we can easily use it as the output for training our model and evaluating its performance on the testing set.
+
+```{r}
+set.seed(232)
+train_index <- createDataPartition(model.data$STATUS_NUM, p = 0.75, list = FALSE)
+train_data <- model.data[train_index, ]
+test_data <- model.data[-train_index, ]
+
+training_data <- model.matrix(STATUS_NUM ~ . - 1, data = train_data)
+testing_data <- model.matrix(STATUS_NUM ~ . - 1, data = test_data)
+
+# Extracting the target variable
+train_labels <- train_data$STATUS_NUM
+test_labels <- test_data$STATUS_NUM
+```
+
+
+```{r}
+# Load the xgboost package
+library(xgboost)
+
+# Convert the data to the xgb.DMatrix format
+train_matrix <- xgb.DMatrix(data = training_data, label = train_labels)
+test_matrix <- xgb.DMatrix(data = testing_data, label = test_labels)
+
+# Set up XGBoost parameters
+params <- list(
+  objective = "multi:softprob",
+  eval_metric = "mlogloss",
+  num_class = length(unique(train_labels)),
+  eta = 0.3,
+  max_depth = 6,
+  subsample = 0.8,
+  colsample_bytree = 0.8
+)
+
+# Train the XGBoost model
+set.seed(123)
+xgb_model <- xgb.train(
+  params = params,
+  data = train_matrix,
+  nrounds = 100,
+  watchlist = list(train = train_matrix, test = test_matrix),
+  early_stopping_rounds = 10,
+  maximize = FALSE,
+  verbose = 1
+)
+
+# Make predictions on the test dataset
+test_pred_probs <- predict(xgb_model, test_matrix)
+test_preds <- matrix(test_pred_probs, nrow = length(test_labels), ncol = length(unique(train_labels))) %>%
+  t() %>%
+  apply(1, which.max) %>%
+  `-`(1)
+```
+```{r}
+# Converting the probabilities to class labels
+test_preds <- matrix(test_pred_probs, nrow = length(unique(train_labels)), ncol = length(test_labels))
+test_preds <- max.col(t(test_preds)) - 1
+
+# Computing the accuracy
+accuracy <- mean(test_preds == test_labels)
+cat(accuracy*100, "%\n")
+```
+
+We first run a XGBoost model as it has been shown to be effective in solving classification problems. We decided to use XGBoost because of its superior performance compared to other models.
+
+To train the XGBoost model, we first converted our training and test data into the xgb.DMatrix format, which is the recommended format for XGBoost. We then set up the XGBoost parameters, such as the objective function, evaluation metric, number of classes, and other hyperparameters. We used the "multi:softprob" objective function to predict the probabilities of each class and "mlogloss" as the evaluation metric to evaluate the performance of the model.
+
+The XGBoost model was trained on the training dataset for 100 rounds using early stopping with a maximum depth of 6, an eta value of 0.3, a subsample rate of 0.8, and a column subsample rate of 0.8. During the training, we monitored the performance of the model on both the training and test datasets. The model was stopped if there was no improvement in the evaluation metric for ten consecutive rounds.
+
+After training the model, we made predictions on the test dataset and calculated the accuracy of the model. We achieved an accuracy of 100%, which means that the model correctly classified all the observations in the test set.
+
+**4. Decision Tree Model**
+
+Now, we will run a decision tree model to compare the performance with the XGBoost Model.
+
+```{r}
+library(rpart)
+
+# Converting matrices to data.frames
+train_data_ <- as.data.frame(training_data)
+test_data_ <- as.data.frame(testing_data)
+
+train_data_$label <- as.factor(train_labels)
+test_data_$label <- as.factor(test_labels)
+
+# Training the decision tree model
+decision_tree_model <- rpart(label ~ ., data = train_data_, method = "class")
+
+# Making predictions on the test dataset
+test_preds1 <- predict(decision_tree_model, test_data_, type = "class")
+
+# Computing the accuracy
+accuracy <- mean(test_preds == test_data_$label)
+cat("Accuracy:", accuracy * 100, "%\n")
+```
+
+It is important to note here that the training_data and testing_data matrices, which contain the encoded features, are converted back into data.frames to be used with the rpart library. Then the target variable, represented by train_labels and test_labels, is added to their respective data.frames as a new column named "label." The labels are also converted to factors, as rpart requires categorical variables to be represented as factors. This prepares the data for building and evaluating a decision tree model using the rpart library.
+
+Finally, the decision tree model achieved an accuracy of 99.8% on the test dataset. This indicates that the model was able to accurately classify the samples in the test dataset. The high accuracy of the model suggests that the decision tree was able to capture the underlying patterns and relationships between the features and the labels in the dataset.
+
+**5. Comparing the two models**
+
+Both the XGBoost and the decision tree models have achieved high accuracy on the test dataset. The XGBoost model has an accuracy of 100%, while the decision tree model has an accuracy of 99.8%. Despite both models performing well, the XGBoost model outperforms the decision tree model by a small margin. 
+
+XGBoost is a learning method that uses multiple base learners (decision trees) to build a more robust model. It combines the predictions of several weak learners to create a strong learner. It adds new trees to the model, focusing on correcting the errors made by previous trees. This process helps XGBoost generalize better and achieve higher accuracy than a single decision tree model. On the other hand, a single decision tree can be more prone to overfitting, especially with complex datasets.
+
+In summary, while both models have achieved high accuracy, the XGBoost model has a slight edge over the decision tree model due to its ability to combine multiple trees and focus on correcting errors, ultimately leading to better generalization and performance on unseen data.
+
+
+**Conclusion** 
+
+In this analysis, we used two machine learning models, namely Decision Tree and XGBoost, to predict the approval status of the credit card application. We found that both models had high accuracy levels, with the Decision Tree model achieving an accuracy of 99.8%, while the XGBoost model achieved 100 % accuracy. Based on the results of this analysis, we can conclude that machine learning models are effective in predicting the approval status of credit card applications. Both the Decision Tree and XGBoost models performed well in this analysis, and they provided valuable insights into the most important factors that influence credit card application approval.
+
+Our machine learning analysis can provide valuable insights and inform decision-making in the following ways:
+
+**Improve credit card approval process:** By using the machine learning models to predict the approval status of credit card applications, the organization can automate and speed up the approval process, reducing manual effort and processing time.
+
+**Reduce risk and fraud:** The machine learning models can help identify potential risks and fraudulent applications, which can help the organization take appropriate measures to mitigate those risks and protect themselves against fraud.
+
+**Optimize credit policies:** The insights gained from the machine learning models can help the organization understand the most important factors that affect credit card approval and adjust their credit policies accordingly to improve their business performance.
+
+**Enhance customer experience:** The faster and more accurate credit card approval process can lead to a better customer experience, which can result in increased customer loyalty and retention.
+
+
+**Limitations**
+
+1. Limited feature engineering: The analysis did not perform extensive feature engineering. There might be other useful features that can improve the model's performance or provide better insights.
+
+2. Model comparison: Only two models have been compared. There might be other models or algorithms that can provide better performance or interpretation. It is essential to explore a range of models to identify the best one for the task.
+
+3. Interpretability: XGBoost models can be harder to interpret compared to simpler models like Decision Trees. Understanding the importance of different features or the logic behind the predictions can be more challenging with complex models like XGBoost.
+
+4. Hyperparameter tuning: Default hyperparameters were used for the XGBoost and Decision Tree models. Tuning the hyperparameters might lead to better performance or more robust models.
